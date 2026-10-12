@@ -1,0 +1,17 @@
+# Entorno virtual
+venv/
+.venv/
+myvenv/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Credenciales (¡nunca a GitHub!)
+.env
+
+# Editor / sistema
+.vscode/
+.idea/
+.DS_Store
