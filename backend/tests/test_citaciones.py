@@ -13,7 +13,7 @@ def test_crear_citacion_notifica_a_todos_los_acudientes(client, login, datos):
         "estudiante_id": datos["estudiantes"]["samuel"]["id"], "motivo": "Convivencia",
         "fecha_hora": _futuro(), "lugar": "Coordinación"})
     assert r.status_code == 201
-    assert r.json()["docente_nombre"] == "Luis Martínez" and r.json()["estado_citacion"] == "pendiente"
+    assert r.json()["docente_nombre"] == "Luis Fernando Martínez" and r.json()["estado_citacion"] == "pendiente"
     for quien in ("jorge", "laura", "ana"):
         notifs = client.get("/notificaciones/", headers=login(quien)).json()
         assert any(n["tipo"] == "citacion" and n["referencia_id"] == r.json()["id"] for n in notifs), quien
@@ -38,8 +38,9 @@ def test_visibilidad_de_citaciones_por_rol(client, login, datos):
     assert client.get(f"/citaciones/{cid}", headers=login("jorge")).status_code == 200
     assert client.get(f"/citaciones/{cid}", headers=login("maria")).status_code == 404
     assert client.get(f"/citaciones/{cid}", headers=login("doc2")).status_code == 404
-    assert len(client.get("/citaciones/", headers=login("coord")).json()) == 1
-    assert client.get("/citaciones/", headers=login("doc2")).json() == []
+    assert len(client.get("/citaciones/", headers=login("coord")).json()) == 9
+    assert {c["estudiante_nombre"] for c in client.get("/citaciones/", headers=login("doc2")).json()} == \
+        {"Isabella Sánchez", "Tomás Charris Orozco", "Valentina Rodríguez"}
 
 
 def test_calendario_por_rango_de_fechas(client, login):
@@ -48,7 +49,7 @@ def test_calendario_por_rango_de_fechas(client, login):
                         params={"desde": hoy.isoformat(), "hasta": (hoy + timedelta(days=30)).isoformat()})
     fuera = client.get("/citaciones/", headers=login("coord"),
                        params={"desde": (hoy + timedelta(days=30)).isoformat()})
-    assert len(dentro.json()) == 1 and fuera.json() == []
+    assert len(dentro.json()) == 6 and fuera.json() == []
 
 
 def test_acudiente_confirma_pero_no_cancela(client, login, datos):

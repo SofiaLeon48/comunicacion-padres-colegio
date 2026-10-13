@@ -4,7 +4,7 @@ from starlette.websockets import WebSocketDisconnect
 
 def _token(client, correo):
     from scripts.seed import PASSWORD_DEMO
-    return client.post("/auth/login", data={"username": correo, "password": PASSWORD_DEMO}).json()["access_token"]
+    return client.post("/auth/token", data={"username": correo, "password": PASSWORD_DEMO}).json()["access_token"]
 
 
 def test_websocket_rechaza_token_invalido(client):

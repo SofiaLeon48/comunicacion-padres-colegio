@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.deps import GESTION, UsuarioActual, no_encontrado, prohibido, requiere_roles
+from app.core.deps import GESTION, UsuarioActual, no_encontrado, prohibido, requiere_roles, requiere_modulo
 from app.models.comun import Mensaje
 from app.models.curso import CursoActualizar, CursoCrear, CursoSalida
 from app.models.estudiante import EstudianteSalida
@@ -9,7 +9,8 @@ from app.repositories.estudiante_repo import EstudianteRepository
 from app.repositories.usuario_repo import UsuarioRepository
 from app.services import actividad
 
-router = APIRouter(prefix="/cursos", tags=["Administración - cursos"])
+router = APIRouter(prefix="/cursos", tags=["Administración - cursos"],
+                   dependencies=[Depends(requiere_modulo("cursos"))])
 repo = CursoRepository()
 estudiantes = EstudianteRepository()
 usuarios = UsuarioRepository()

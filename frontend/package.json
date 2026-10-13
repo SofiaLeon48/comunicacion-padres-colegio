@@ -1,0 +1,28 @@
+{
+	"name": "conecta-escolar",
+	"private": true,
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-static": "^3.0.10",
+		"@sveltejs/kit": "^2.47.1",
+		"@sveltejs/vite-plugin-svelte": "^6.2.1",
+		"svelte": "^5.41.0",
+		"vite": "^7.1.10"
+	},
+	"dependencies": {
+		"bootstrap": "^5.3.3",
+		"bootstrap-icons": "^1.11.3",
+		"chart.js": "^4.4.6",
+		"datatables.net-bs5": "^2.1.8",
+		"datatables.net-responsive-bs5": "^3.0.3",
+		"jquery": "^3.7.1"
+	},
+	"description": "Frontend de Conecta Escolar (SvelteKit + Bootstrap)"
+}

@@ -36,6 +36,7 @@ class ComunicadoSalida(Auditoria):
     requiere_confirmacion: bool
     fecha_publicacion: datetime
     confirmado_por_mi: bool | None = None
+    total_confirmados: int | None = None
 
 
 class ConfirmacionSalida(Auditoria):

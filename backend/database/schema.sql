@@ -1,10 +1,10 @@
 -- =====================================================================
 --  Comunicación Padres-Colegio en Tiempo Real
---  Esquema completo: 12 tablas · PostgreSQL (Neon)
+--  Esquema completo: 14 tablas · PostgreSQL (Neon)
 --
 --  Ejecutar en el SQL Editor de Neon, o con:  python -m scripts.init_db
 --
---  Convenciones aplicadas a las 12 tablas (sin excepciones):
+--  Convenciones aplicadas a las 14 tablas (sin excepciones):
 --    creado     -> fecha/hora de creación (la asigna la BD)
 --    modificado -> fecha/hora de la última edición (la actualiza un TRIGGER)
 --    estado     -> 'activo' / 'inactivo'  (borrado lógico)
@@ -12,6 +12,8 @@
 --  para no mezclar su significado con el borrado lógico.
 -- =====================================================================
 
+DROP TABLE IF EXISTS rol_modulo             CASCADE;
+DROP TABLE IF EXISTS modulos                CASCADE;
 DROP TABLE IF EXISTS logs_actividad         CASCADE;
 DROP TABLE IF EXISTS asistencia_citaciones  CASCADE;
 DROP TABLE IF EXISTS citaciones             CASCADE;
@@ -69,6 +71,33 @@ CREATE TABLE usuarios (
 );
 -- Correo único sin importar mayúsculas/minúsculas
 CREATE UNIQUE INDEX uq_usuarios_correo ON usuarios (LOWER(correo));
+
+-- 13. modulos  — secciones del aplicativo web (alimentan el menú de navegación)
+CREATE TABLE modulos (
+    id          SERIAL PRIMARY KEY,
+    clave       VARCHAR(30)  NOT NULL CONSTRAINT uq_modulos_clave UNIQUE,   -- identificador interno: 'comunicados'
+    nombre      VARCHAR(50)  NOT NULL,                                       -- texto del menú: 'Comunicados'
+    descripcion VARCHAR(150),
+    ruta        VARCHAR(80)  NOT NULL,                                       -- ruta del frontend: '/comunicados'
+    icono       VARCHAR(40)  NOT NULL DEFAULT 'bi-grid',                     -- Bootstrap Icons
+    orden       SMALLINT     NOT NULL DEFAULT 0,
+    creado      TIMESTAMP    NOT NULL DEFAULT NOW(),
+    modificado  TIMESTAMP    NOT NULL DEFAULT NOW(),
+    estado      VARCHAR(20)  NOT NULL DEFAULT 'activo'
+                CONSTRAINT ck_modulos_estado CHECK (estado IN ('activo', 'inactivo'))
+);
+
+-- 14. rol_modulo  — tabla puente M:N (roles ↔ modulos): QUÉ módulos ve cada rol
+CREATE TABLE rol_modulo (
+    id         SERIAL PRIMARY KEY,
+    rol_id     INTEGER     NOT NULL REFERENCES roles(id),
+    modulo_id  INTEGER     NOT NULL REFERENCES modulos(id),
+    creado     TIMESTAMP   NOT NULL DEFAULT NOW(),
+    modificado TIMESTAMP   NOT NULL DEFAULT NOW(),
+    estado     VARCHAR(20) NOT NULL DEFAULT 'activo'
+               CONSTRAINT ck_rol_modulo_estado CHECK (estado IN ('activo', 'inactivo')),
+    CONSTRAINT uq_rol_modulo UNIQUE (rol_id, modulo_id)
+);
 
 
 -- =====================================================================
@@ -254,7 +283,7 @@ CREATE TABLE logs_actividad (
 
 
 -- =====================================================================
---  Triggers "modificado" para las 12 tablas
+--  Triggers "modificado" para las 14 tablas
 -- =====================================================================
 DO $$
 DECLARE t TEXT;
@@ -262,7 +291,7 @@ BEGIN
     FOREACH t IN ARRAY ARRAY[
         'roles', 'usuarios', 'cursos', 'estudiantes', 'acudiente_estudiante',
         'comunicados', 'confirmaciones_lectura', 'mensajes', 'notificaciones',
-        'citaciones', 'asistencia_citaciones', 'logs_actividad'
+        'citaciones', 'asistencia_citaciones', 'logs_actividad', 'modulos', 'rol_modulo'
     ] LOOP
         EXECUTE format(
             'CREATE TRIGGER trg_%1$s_modificado BEFORE UPDATE ON %1$I
@@ -289,13 +318,30 @@ CREATE INDEX ix_logs_fecha              ON logs_actividad (fecha DESC);
 
 
 -- =====================================================================
---  Datos base: los 4 roles del sistema
+--  Datos base: 3 roles, 9 módulos y permisos (rol x módulo)
 -- =====================================================================
 INSERT INTO roles (nombre, descripcion) VALUES
-    ('admin',        'Administrador de la plataforma'),
-    ('coordinacion', 'Coordinación académica y de convivencia'),
+    ('coordinacion', 'Coordinación: administra la plataforma y la comunicación institucional'),
     ('docente',      'Docente o director de grupo'),
     ('acudiente',    'Padre, madre o acudiente de un estudiante');
+
+INSERT INTO modulos (clave, nombre, descripcion, ruta, icono, orden) VALUES
+    ('inicio',        'Inicio',        'Resumen personalizado según el rol',            '/inicio',        'bi-house-door',     1),
+    ('comunicados',   'Comunicados',   'Circulares digitales y confirmación de lectura','/comunicados',   'bi-megaphone',      2),
+    ('mensajes',      'Mensajería',    'Chat por curso y mensajes directos',            '/mensajes',      'bi-chat-dots',      3),
+    ('citaciones',    'Citaciones',    'Calendario de citaciones a padres',             '/citaciones',    'bi-calendar-event', 4),
+    ('estudiantes',   'Estudiantes',   'Estudiantes y sus acudientes',                  '/estudiantes',   'bi-mortarboard',    5),
+    ('cursos',        'Cursos',        'Grupos, jornadas y directores de grupo',        '/cursos',        'bi-easel',          6),
+    ('usuarios',      'Usuarios',      'Cuentas de acceso a la plataforma',             '/usuarios',      'bi-people',         7),
+    ('reportes',      'Reportes',      'Indicadores, lectura de circulares y auditoría','/reportes',      'bi-bar-chart-line', 8),
+    ('configuracion', 'Configuración', 'Roles, módulos y permisos',                     '/configuracion', 'bi-gear',           9);
+
+-- Matriz de permisos
+INSERT INTO rol_modulo (rol_id, modulo_id)
+SELECT r.id, m.id FROM roles r JOIN modulos m ON
+    (r.nombre = 'coordinacion')
+ OR (r.nombre = 'docente'   AND m.clave IN ('inicio','comunicados','mensajes','citaciones','estudiantes','cursos','reportes'))
+ OR (r.nombre = 'acudiente' AND m.clave IN ('inicio','comunicados','mensajes','citaciones','estudiantes'));
 
 -- =====================================================================
 --  Zona horaria de la base de datos (Neon usa UTC por defecto).
@@ -306,7 +352,7 @@ DO $$ BEGIN
 END $$;
 SET timezone TO 'America/Bogota';
 
--- Verificación: deben aparecer las 12 tablas
+-- Verificación: deben aparecer las 14 tablas
 SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
 ORDER BY table_name;

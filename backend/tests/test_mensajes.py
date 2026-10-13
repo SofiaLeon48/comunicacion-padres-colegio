@@ -1,8 +1,8 @@
 def test_chat_del_curso_solo_para_miembros(client, login, datos):
     c5a = datos["cursos"]["5A"]["id"]
     chat = client.get(f"/mensajes/curso/{c5a}", headers=login("jorge"))
-    assert chat.status_code == 200 and len(chat.json()) == 2
-    assert chat.json()[0]["remitente_nombre"] == "Luis Martínez"     # orden cronológico
+    assert chat.status_code == 200 and len(chat.json()) == 4
+    assert chat.json()[0]["remitente_nombre"] == "Luis Fernando Martínez"     # orden cronológico
     assert client.get(f"/mensajes/curso/{c5a}", headers=login("ana")).status_code == 403
     r = client.post("/mensajes/", json={"curso_id": c5a, "contenido": "Hola a todos"}, headers=login("laura"))
     assert r.status_code == 201 and r.json()["remitente_rol"] == "acudiente"
@@ -24,10 +24,10 @@ def test_mensaje_directo_notifica_y_se_marca_leido(client, login, datos):
                     headers=login("doc1"))
     assert r.status_code == 201
     notifs = client.get("/notificaciones/?solo_no_leidas=true", headers=login("jorge")).json()
-    assert any(n["tipo"] == "mensaje" and "Luis Martínez" in n["titulo"] for n in notifs)
+    assert any(n["tipo"] == "mensaje" and "Luis Fernando Martínez" in n["titulo"] for n in notifs)
 
     bandeja = client.get("/mensajes/directos", headers=login("jorge")).json()
-    assert bandeja[0]["contraparte_nombre"] == "Luis Martínez" and bandeja[0]["no_leidos"] == 1
+    assert bandeja[0]["contraparte_nombre"] == "Luis Fernando Martínez" and bandeja[0]["no_leidos"] == 1
     conv = client.get(f"/mensajes/directos/{u['doc1']['id']}", headers=login("jorge")).json()
     assert conv[-1]["contenido"] == "Don Jorge, ¿podemos hablar?"
     assert client.get("/mensajes/directos", headers=login("jorge")).json()[0]["no_leidos"] == 0

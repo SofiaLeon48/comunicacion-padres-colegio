@@ -1,5 +1,7 @@
 erDiagram
     roles ||--o{ usuarios : "tiene"
+    roles ||--o{ rol_modulo : "puede ver"
+    modulos ||--o{ rol_modulo : "asignado a"
     usuarios |o--o{ cursos : "dirige"
     cursos ||--o{ estudiantes : "matricula"
     usuarios ||--o{ acudiente_estudiante : "es acudiente"
@@ -148,6 +150,26 @@ erDiagram
         int entidad_id
         varchar detalle
         timestamp fecha
+        timestamp creado
+        timestamp modificado
+        varchar estado
+    }
+    modulos {
+        serial id PK
+        varchar clave UK
+        varchar nombre
+        varchar descripcion
+        varchar ruta
+        varchar icono
+        smallint orden
+        timestamp creado
+        timestamp modificado
+        varchar estado
+    }
+    rol_modulo {
+        serial id PK
+        int rol_id FK
+        int modulo_id FK
         timestamp creado
         timestamp modificado
         varchar estado

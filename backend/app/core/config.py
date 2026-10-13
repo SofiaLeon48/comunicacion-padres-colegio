@@ -29,6 +29,9 @@ class Settings:
         if o.strip()
     ]
 
+    # Además se acepta cualquier subdominio que cumpla esta expresión (p. ej. despliegues de Vercel)
+    CORS_ORIGIN_REGEX: str = os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app")
+
     # Correo (opcional). Si SMTP_HOST está vacío, no se envían correos.
     SMTP_HOST: str = os.getenv("SMTP_HOST", "")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))

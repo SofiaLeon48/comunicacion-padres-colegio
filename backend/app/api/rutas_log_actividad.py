@@ -2,12 +2,12 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.deps import GESTION, requiere_roles
+from app.core.deps import GESTION, requiere_roles, requiere_modulo
 from app.models.log_actividad import LogSalida
 from app.repositories.log_actividad_repo import LogActividadRepository
 
 router = APIRouter(prefix="/logs", tags=["Reportes y Analítica - logs de actividad"],
-                   dependencies=[Depends(requiere_roles(*GESTION))])
+                   dependencies=[Depends(requiere_roles(*GESTION)), Depends(requiere_modulo("reportes"))])
 repo = LogActividadRepository()
 
 

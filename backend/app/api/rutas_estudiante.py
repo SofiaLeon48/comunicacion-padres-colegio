@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends
 
-from app.core.deps import GESTION, UsuarioActual, no_encontrado, prohibido, requiere_roles
+from app.core.deps import GESTION, UsuarioActual, no_encontrado, prohibido, requiere_roles, requiere_modulo
 from app.models.comun import Mensaje
 from app.models.estudiante import (AcudienteDeEstudiante, EstudianteActualizar, EstudianteCrear,
                                    EstudianteSalida)
 from app.repositories.estudiante_repo import EstudianteRepository
 from app.services import actividad
 
-router = APIRouter(prefix="/estudiantes", tags=["Administración - estudiantes"])
+router = APIRouter(prefix="/estudiantes", tags=["Administración - estudiantes"],
+                   dependencies=[Depends(requiere_modulo("estudiantes"))])
 repo = EstudianteRepository()
 gestion = Depends(requiere_roles(*GESTION))
 

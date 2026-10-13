@@ -1,6 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
-from app.core.deps import PERSONAL, UsuarioActual, es_gestion, no_encontrado, prohibido, requiere_roles
+from app.core.deps import PERSONAL, UsuarioActual, es_gestion, no_encontrado, prohibido, requiere_roles, requiere_modulo
 from app.models.comun import Mensaje
 from app.models.comunicado import (ComunicadoActualizar, ComunicadoCrear, ComunicadoSalida,
                                    ConfirmacionSalida, EstadoLectura)
@@ -10,7 +10,8 @@ from app.repositories.curso_repo import CursoRepository
 from app.services import actividad
 from app.services.notificador import notificar
 
-router = APIRouter(prefix="/comunicados", tags=["Comunicados y Mensajería - comunicados"])
+router = APIRouter(prefix="/comunicados", tags=["Comunicados y Mensajería - comunicados"],
+                   dependencies=[Depends(requiere_modulo("comunicados"))])
 repo = ComunicadoRepository()
 confirmaciones = ConfirmacionLecturaRepository()
 cursos = CursoRepository()

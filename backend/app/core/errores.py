@@ -19,6 +19,8 @@ MENSAJES_RESTRICCION = {
     "uq_estudiantes_documento": "Ya existe un estudiante con ese documento.",
     "uq_acudiente_estudiante": "Ese acudiente ya está vinculado a ese estudiante.",
     "uq_confirmacion_por_usuario": "Ya confirmaste la lectura de este comunicado.",
+    "uq_rol_modulo": "Ese rol ya tiene asignado ese módulo.",
+    "uq_modulos_clave": "Ya existe un módulo con esa clave.",
     "uq_asistencia_por_citacion": "Esta citación ya tiene asistencia registrada.",
     "ck_mensajes_destino": "Un mensaje debe ir a un curso o a un destinatario (solo uno de los dos).",
     "ck_mensajes_no_a_si_mismo": "No puedes enviarte un mensaje a ti mismo.",

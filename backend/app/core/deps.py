@@ -13,14 +13,16 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.security import decodificar_token
+from app.repositories.rol_modulo_repo import RolModuloRepository
 from app.repositories.usuario_repo import UsuarioRepository
 
 # Grupos de roles reutilizables
-GESTION = ("admin", "coordinacion")                 # administran la plataforma
-PERSONAL = ("admin", "coordinacion", "docente")     # personal del colegio
+GESTION = ("coordinacion",)                 # administra la plataforma
+PERSONAL = ("coordinacion", "docente")     # personal del colegio
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 _usuarios = UsuarioRepository()
+_permisos = RolModuloRepository()
 
 
 def obtener_usuario_desde_token(token: str) -> dict | None:
@@ -48,6 +50,16 @@ def requiere_roles(*roles: str):
     def verificar(usuario: UsuarioActual) -> dict:
         if usuario["rol"] not in roles:
             raise HTTPException(status_code=403, detail="No tienes permiso para realizar esta acción.")
+        return usuario
+    return verificar
+
+
+def requiere_modulo(clave: str):
+    """Permite el acceso solo si el rol del usuario tiene asignado el módulo en la tabla rol_modulo.
+    Así los permisos se controlan desde la BASE DE DATOS (módulo Configuración)."""
+    def verificar(usuario: UsuarioActual) -> dict:
+        if not _permisos.rol_tiene_modulo(usuario["rol_id"], clave):
+            raise HTTPException(status_code=403, detail="Tu rol no tiene acceso a este módulo.")
         return usuario
     return verificar
 

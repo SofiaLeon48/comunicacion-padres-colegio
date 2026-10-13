@@ -23,9 +23,14 @@ class EstudianteRepository(BaseRepository):
             valores += [f"%{buscar}%", f"%{buscar}%"]
         where = ("WHERE " + " AND ".join(condiciones)) if condiciones else ""
         return self._todos(f"""
-            SELECT e.*, c.nombre AS curso_nombre
+            SELECT e.*, c.nombre AS curso_nombre, c.jornada AS curso_jornada,
+                   d.nombre AS director_nombre,
+                   (SELECT STRING_AGG(u.nombre || ' (' || ae.parentesco || ')', ', ' ORDER BY ae.es_principal DESC)
+                      FROM acudiente_estudiante ae JOIN usuarios u ON u.id = ae.acudiente_id
+                     WHERE ae.estudiante_id = e.id AND ae.estado = 'activo') AS acudientes
             FROM estudiantes e
             JOIN cursos c ON c.id = e.curso_id
+            LEFT JOIN usuarios d ON d.id = c.director_id
             {where}
             ORDER BY e.nombre
         """, valores)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.deps import GESTION, PERSONAL, no_encontrado, prohibido, requiere_roles
+from app.core.deps import GESTION, PERSONAL, no_encontrado, requiere_modulo, requiere_roles
 from app.core.security import hashear_password
 from app.models.comun import Mensaje
 from app.models.usuario import UsuarioActualizar, UsuarioCrear, UsuarioSalida
@@ -8,7 +8,8 @@ from app.repositories.rol_repo import RolRepository
 from app.repositories.usuario_repo import UsuarioRepository
 from app.services import actividad
 
-router = APIRouter(prefix="/usuarios", tags=["Usuarios y Roles - usuarios"])
+router = APIRouter(prefix="/usuarios", tags=["Usuarios y Roles - usuarios"],
+                   dependencies=[Depends(requiere_modulo("usuarios"))])
 repo = UsuarioRepository()
 roles = RolRepository()
 gestion = Depends(requiere_roles(*GESTION))
@@ -18,14 +19,12 @@ def _validar_rol_asignable(rol_id: int, actor: dict) -> None:
     rol = roles.obtener(rol_id)
     if not rol:
         raise HTTPException(status_code=400, detail="El rol indicado no existe o está inactivo.")
-    if rol["nombre"] == "admin" and actor["rol"] != "admin":
-        raise prohibido("Solo un administrador puede crear o asignar administradores.")
 
 
 @router.get("/", response_model=list[UsuarioSalida],
             dependencies=[Depends(requiere_roles(*PERSONAL))])
 def listar_usuarios(rol: str | None = None, buscar: str | None = None, incluir_inactivos: bool = False):
-    """Filtros opcionales: `rol` (admin, coordinacion, docente, acudiente) y `buscar` (nombre o correo)."""
+    """Filtros opcionales: `rol` (coordinacion, docente, acudiente) y `buscar` (nombre o correo)."""
     return repo.listar_con_rol(rol, buscar, incluir_inactivos)
 
 
@@ -53,8 +52,6 @@ def actualizar_usuario(usuario_id: int, datos: UsuarioActualizar, actor: dict = 
     actual = repo.obtener_con_rol(usuario_id, incluir_inactivos=True)
     if not actual:
         raise no_encontrado("Usuario")
-    if actual["rol"] == "admin" and actor["rol"] != "admin":
-        raise prohibido("Solo un administrador puede modificar a otro administrador.")
     valores = datos.model_dump(exclude_unset=True, exclude={"password"})
     if datos.password:
         valores["password_hash"] = hashear_password(datos.password)
@@ -72,8 +69,6 @@ def eliminar_usuario(usuario_id: int, actor: dict = gestion):
     objetivo = repo.obtener_con_rol(usuario_id)
     if not objetivo:
         raise no_encontrado("Usuario")
-    if objetivo["rol"] == "admin" and actor["rol"] != "admin":
-        raise prohibido("Solo un administrador puede desactivar a otro administrador.")
     repo.desactivar(usuario_id)
     actividad.registrar(actor, "eliminar", "usuarios", usuario_id)
     return {"mensaje": "Usuario desactivado correctamente (borrado lógico)."}

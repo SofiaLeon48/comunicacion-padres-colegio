@@ -1,4 +1,4 @@
-# Backend · API de Comunicación Padres-Colegio
+# Backend · API de Conecta Escolar
 
 API REST con **FastAPI + PostgreSQL (Neon)**. Hace cuatro cosas principales:
 - Publica circulares digitales, con confirmación de lectura.
@@ -31,7 +31,7 @@ pip install -r requirements.txt
 copy .env.example .env         # Windows   (cp en macOS/Linux)
 #    → abre .env y pega tu DATABASE_URL de Neon y una JWT_SECRET
 
-# 4. Crear las 12 tablas (o pega database/schema.sql en el SQL Editor de Neon)
+# 4. Crear las 14 tablas (o pega database/schema.sql en el SQL Editor de Neon)
 python -m scripts.init_db
 
 # 5. Cargar datos de prueba
@@ -45,28 +45,28 @@ Cuando la API esté encendida, abre **http://127.0.0.1:8000/docs** para usar Swa
 
 ### Usuarios de prueba
 
-Todos usan la contraseña `Colegio2026*`.
+Todos usan la contraseña `Colegio2026*`. Al iniciar sesión se elige también el rol.
 
 | Rol | Correo | Notas |
 |---|---|---|
-| admin | admin@colegio.edu.co | Acceso total |
-| coordinacion | coordinacion@colegio.edu.co | Gestiona la plataforma |
+| coordinacion | coordinacion@colegio.edu.co | Administra la plataforma (9 módulos) |
 | docente | lmartinez@colegio.edu.co | Director del 5A |
 | docente | cgomez@colegio.edu.co | Directora del 6B |
 | acudiente | maria.rodriguez@correo.com | Hijos en 5A y 6B |
 | acudiente | jorge.perez@correo.com | Hijo en 5A |
-| acudiente | laura.diaz@correo.com | Hijo en 5A (comparte con Jorge) |
-| acudiente | ana.sanchez@correo.com | Hija en 6B |
+
+Hay 16 usuarios, 5 cursos, 14 estudiantes, 9 circulares, mensajes y 9 citaciones de ejemplo (ver `scripts/seed.py`).
 
 ---
 
 ## 2. Módulos y tablas
 
-Son 5 módulos con 12 tablas en total. Las 12 tablas tienen los mismos campos de auditoría: `creado`, `modificado` y `estado`.
+Son 14 tablas. Todas tienen los mismos campos de auditoría: `creado`, `modificado` y `estado`.
 
 | Módulo | Tablas | Qué resuelve |
 |---|---|---|
-| **Usuarios y Roles** | `roles`, `usuarios` | Login, permisos por rol, perfil |
+| **Usuarios y Roles** | `roles`, `usuarios` | Login con rol, perfil |
+| **Configuración** | `modulos`, `rol_modulo` | Qué módulos (menú) ve cada rol — se edita desde el frontend |
 | **Administración** | `cursos`, `estudiantes`, `acudiente_estudiante` | Estructura académica y quién es acudiente de quién |
 | **Comunicados y Mensajería** *(principal)* | `comunicados`, `confirmaciones_lectura`, `mensajes`, `citaciones`, `asistencia_citaciones` | Circulares, lectura, chat, calendario de citas |
 | **Notificaciones** | `notificaciones` | Avisos en la plataforma, en tiempo real y opcionalmente por correo |
@@ -75,6 +75,7 @@ Son 5 módulos con 12 tablas en total. Las 12 tablas tienen los mismos campos de
 El diagrama entidad-relación está en [`../docs/diagrama_er.png`](../docs/diagrama_er.png). También hay versiones en PDF y Mermaid.
 
 **Relaciones destacadas**
+- **M:N** `roles ↔ modulos` mediante `rol_modulo`: el menú del frontend y los permisos de la API salen de esta tabla.
 - **M:N** `usuarios ↔ estudiantes` mediante `acudiente_estudiante`. Un padre puede tener varios hijos y un hijo varios acudientes.
 - **1:1** `citaciones ↔ asistencia_citaciones`. La restricción `UNIQUE (citacion_id)` es la que lo garantiza.
 - **Opcionales con significado**:
@@ -101,9 +102,9 @@ El diagrama entidad-relación está en [`../docs/diagrama_er.png`](../docs/diagr
 ```
 backend/
 ├── main.py                  → crea la app, CORS, manejadores de error y monta los routers
-├── database/schema.sql      → las 12 tablas, restricciones, triggers e índices
+├── database/schema.sql      → las 14 tablas, restricciones, triggers e índices
 ├── scripts/                 → init_db.py (crea tablas) · seed.py (datos de prueba)
-├── tests/                   → 50 pruebas automatizadas contra PostgreSQL real
+├── tests/                   → 59 pruebas automatizadas contra PostgreSQL real
 └── app/
     ├── core/                → Capa 1: configuración y conexión
     │   ├── config.py           variables del .env
@@ -132,11 +133,14 @@ Y de regreso: **`services/` notifica y registra en el log → respuesta JSON.**
 
 ## 4. Endpoints principales
 
-Hay unos 70 endpoints en total. Todos aparecen en `/docs`.
+Hay más de 80 endpoints. Todos aparecen en `/docs`.
 
 | Módulo | Endpoints destacados |
 |---|---|
-| Autenticación | `POST /auth/login` · `GET/PATCH /auth/me` · `PUT /auth/me/password` |
+| Autenticación | `GET /auth/roles` · `POST /auth/login` (correo + contraseña + rol) · `GET /auth/mis-modulos` · `GET/PATCH /auth/me` · `PUT /auth/me/password` |
+| Inicio | `GET /inicio/resumen` (tablero distinto por rol) |
+| Catálogos | `/catalogos/cursos`, `/estudiantes`, `/acudientes`, `/docentes`, `/contactos`, `/roles` → listas desplegables (el usuario nunca escribe IDs) |
+| Configuración | `GET/POST/PATCH /configuracion/modulos` · `GET/PUT /configuracion/permisos` (matriz rol × módulo) |
 | Usuarios / Roles | CRUD `/usuarios` y `/roles` · `POST /usuarios/{id}/reactivar` |
 | Administración | CRUD `/cursos`, `/estudiantes`, `/acudientes-estudiantes` · `GET /cursos/{id}/estudiantes` · `GET /estudiantes/{id}/acudientes` |
 | Comunicados | CRUD `/comunicados` · `POST /comunicados/{id}/confirmar` · `GET /comunicados/{id}/lecturas` |
@@ -152,20 +156,15 @@ Hay unos 70 endpoints en total. Todos aparecen en `/docs`.
 - `DELETE` hace **borrado lógico**: pasa el `estado` a `'inactivo'` y conserva el historial.
 - Los listados aceptan `?incluir_inactivos=true`.
 
-### Permisos por rol
+### Permisos por rol (tabla `rol_modulo`)
 
-| Acción | admin | coordinación | docente | acudiente |
-|---|:-:|:-:|:-:|:-:|
-| Gestionar usuarios, cursos, estudiantes | ✔ | ✔ (excepto admins) | — | — |
-| Publicar circular de curso | ✔ | ✔ | ✔ | — |
-| Publicar circular general | ✔ | ✔ | — | — |
-| Ver comunicados | todos | todos | todos | generales + cursos de sus hijos |
-| Confirmar lectura | — | — | — | ✔ |
-| Chat de curso | ✔ | ✔ | ✔ | solo cursos de sus hijos |
-| Mensaje directo | ✔ | ✔ | ✔ | solo al personal del colegio |
-| Agendar citaciones | ✔ | ✔ | ✔ (las suyas) | confirmar asistencia |
-| Reportes | ✔ | ✔ | ✔ | — |
-| Logs de auditoría | ✔ | ✔ | — | — |
+| Módulo | Coordinación | Docente | Acudiente |
+|---|:-:|:-:|:-:|
+| Inicio, Comunicados, Mensajería, Citaciones, Estudiantes | ✔ | ✔ | ✔ |
+| Cursos, Reportes | ✔ | ✔ | — |
+| Usuarios, Configuración | ✔ | — | — |
+
+Cada router de la API valida con `requiere_modulo("clave")` que el rol tenga el módulo asignado en la base de datos. Dentro de cada módulo, la API además filtra la información: un acudiente solo ve lo de sus hijos y un docente solo gestiona lo suyo.
 
 ---
 
@@ -199,7 +198,7 @@ $env:TEST_DATABASE_URL="postgresql://usuario:clave@host/colegio_test"
 # macOS / Linux
 export TEST_DATABASE_URL="postgresql://usuario:clave@host/colegio_test"
 
-pytest -q          # → 50 passed
+pytest -q          # → 59 passed
 ```
 
 Las pruebas cubren:
@@ -236,4 +235,5 @@ Las pruebas cubren:
 | `modificado` lo ponía la API | Lo pone un **trigger** de PostgreSQL |
 | 12 repositories con el mismo SQL copiado | `BaseRepository` con herencia |
 | try/except repetido en cada ruta | Manejadores globales de errores |
-| Sin pruebas en el repositorio | 50 pruebas automatizadas |
+| Sin pruebas en el repositorio | 59 pruebas automatizadas |
+| 4 roles, menú fijo | 3 roles y menú cargado desde `rol_modulo` |

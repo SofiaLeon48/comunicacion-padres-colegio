@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.deps import GESTION, UsuarioActual, no_encontrado, requiere_roles
+from app.core.deps import GESTION, UsuarioActual, no_encontrado, requiere_roles, requiere_modulo
 from app.models.acudiente_estudiante import VinculoActualizar, VinculoCrear, VinculoSalida
 from app.models.comun import Mensaje
 from app.repositories.acudiente_estudiante_repo import AcudienteEstudianteRepository
 from app.repositories.usuario_repo import UsuarioRepository
 from app.services import actividad
 
-router = APIRouter(prefix="/acudientes-estudiantes", tags=["Administración - vínculos acudiente/estudiante"])
+router = APIRouter(prefix="/acudientes-estudiantes", tags=["Administración - vínculos acudiente/estudiante"],
+                   dependencies=[Depends(requiere_modulo("estudiantes"))])
 repo = AcudienteEstudianteRepository()
 usuarios = UsuarioRepository()
 gestion = Depends(requiere_roles(*GESTION))

@@ -22,6 +22,9 @@ class EstudianteSalida(Auditoria):
     documento: str
     curso_id: int
     curso_nombre: str | None = None
+    curso_jornada: str | None = None
+    director_nombre: str | None = None
+    acudientes: str | None = None
 
 
 class AcudienteDeEstudiante(BaseModel):

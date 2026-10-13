@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 Estado = Literal["activo", "inactivo"]
-NombreRol = Literal["admin", "coordinacion", "docente", "acudiente"]
+NombreRol = Literal["coordinacion", "docente", "acudiente"]
 
 
 class Auditoria(BaseModel):

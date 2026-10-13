@@ -17,13 +17,13 @@ def test_curso_valores_invalidos(client, login, datos):
 
 
 def test_acudiente_solo_ve_sus_cursos_e_hijos(client, login):
-    cursos_jorge = client.get("/cursos/", headers=login("jorge")).json()
+    cursos_jorge = client.get("/catalogos/cursos", headers=login("jorge")).json()
     assert [c["nombre"] for c in cursos_jorge] == ["5A"]
-    cursos_maria = client.get("/cursos/", headers=login("maria")).json()
+    cursos_maria = client.get("/catalogos/cursos", headers=login("maria")).json()
     assert {c["nombre"] for c in cursos_maria} == {"5A", "6B"}
     hijos = client.get("/estudiantes/", headers=login("maria")).json()
     assert {e["nombre"] for e in hijos} == {"Santiago Rodríguez", "Valentina Rodríguez"}
-    assert len(client.get("/estudiantes/", headers=login("doc1")).json()) == 5
+    assert len(client.get("/estudiantes/", headers=login("doc1")).json()) == 14
 
 
 def test_acudiente_no_ve_estudiante_ajeno(client, login, datos):

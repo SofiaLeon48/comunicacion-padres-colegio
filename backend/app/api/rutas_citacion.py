@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from app.core.config import ahora_local
-from app.core.deps import (PERSONAL, UsuarioActual, es_gestion, no_encontrado, prohibido,
+from app.core.deps import (PERSONAL, UsuarioActual, es_gestion, no_encontrado, prohibido, requiere_modulo,
                            requiere_roles)
 from app.models.citacion import (AsistenciaActualizar, AsistenciaCrear, AsistenciaSalida,
                                  CambioEstadoCitacion, CitacionActualizar, CitacionCrear,
@@ -16,7 +16,8 @@ from app.repositories.usuario_repo import UsuarioRepository
 from app.services import actividad
 from app.services.notificador import notificar
 
-router = APIRouter(prefix="/citaciones", tags=["Comunicados y Mensajería - citaciones"])
+router = APIRouter(prefix="/citaciones", tags=["Comunicados y Mensajería - citaciones"],
+                   dependencies=[Depends(requiere_modulo("citaciones"))])
 repo = CitacionRepository()
 asistencias = AsistenciaCitacionRepository()
 estudiantes = EstudianteRepository()

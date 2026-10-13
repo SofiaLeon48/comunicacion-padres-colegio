@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends
 
-from app.core.deps import UsuarioActual, no_encontrado, requiere_roles
+from app.core.deps import GESTION, UsuarioActual, no_encontrado, requiere_modulo, requiere_roles
 from app.models.comun import Mensaje
 from app.models.rol import RolActualizar, RolCrear, RolSalida
 from app.repositories.rol_repo import RolRepository
 from app.services import actividad
 
-router = APIRouter(prefix="/roles", tags=["Usuarios y Roles - roles"])
+router = APIRouter(prefix="/roles", tags=["Configuración - roles"],
+                   dependencies=[Depends(requiere_modulo("configuracion"))])
 repo = RolRepository()
-solo_admin = Depends(requiere_roles("admin"))
+solo_admin = Depends(requiere_roles(*GESTION))
 
 
 @router.get("/", response_model=list[RolSalida])

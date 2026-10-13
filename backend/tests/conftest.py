@@ -34,7 +34,6 @@ from scripts.init_db import crear_esquema  # noqa: E402
 from scripts.seed import PASSWORD_DEMO, sembrar  # noqa: E402
 
 CORREOS = {
-    "admin": "admin@colegio.edu.co",
     "coord": "coordinacion@colegio.edu.co",
     "doc1": "lmartinez@colegio.edu.co",     # director 5A
     "doc2": "cgomez@colegio.edu.co",        # director 6B
@@ -42,7 +41,10 @@ CORREOS = {
     "jorge": "jorge.perez@correo.com",      # hijo en 5A (Samuel)
     "ana": "ana.sanchez@correo.com",        # hija en 6B
     "laura": "laura.diaz@correo.com",       # también acudiente de Samuel (5A)
+    "carlos": "carlos.mendoza@correo.com",  # hijos en 3A y 9A
 }
+
+ROL = {"coord": "coordinacion", "doc1": "docente", "doc2": "docente"}
 
 
 @pytest.fixture()
@@ -64,7 +66,8 @@ def login(client):
 
     def _login(quien: str) -> dict:
         if quien not in cache:
-            r = client.post("/auth/login", data={"username": CORREOS[quien], "password": PASSWORD_DEMO})
+            r = client.post("/auth/login", json={"correo": CORREOS[quien], "password": PASSWORD_DEMO,
+                                                 "rol": ROL.get(quien, "acudiente")})
             assert r.status_code == 200, r.text
             cache[quien] = {"Authorization": f"Bearer {r.json()['access_token']}"}
         return cache[quien]

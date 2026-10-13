@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import Depends, APIRouter, HTTPException, Query
 
-from app.core.deps import UsuarioActual, es_gestion, no_encontrado, prohibido
+from app.core.deps import UsuarioActual, es_gestion, no_encontrado, prohibido, requiere_modulo
 from app.models.comun import Mensaje
 from app.models.mensaje import Conversacion, MensajeCrear, MensajeEditar, MensajeSalida
 from app.repositories.curso_repo import CursoRepository
@@ -10,7 +10,8 @@ from app.services import actividad
 from app.services.notificador import notificar
 from app.services.tiempo_real import gestor
 
-router = APIRouter(prefix="/mensajes", tags=["Comunicados y Mensajería - mensajes"])
+router = APIRouter(prefix="/mensajes", tags=["Comunicados y Mensajería - mensajes"],
+                   dependencies=[Depends(requiere_modulo("mensajes"))])
 repo = MensajeRepository()
 cursos = CursoRepository()
 usuarios = UsuarioRepository()

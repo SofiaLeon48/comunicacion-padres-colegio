@@ -1,0 +1,21 @@
+# Despliegue de la API en Render (https://render.com) — "Blueprint"
+services:
+  - type: web
+    name: conecta-escolar-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /salud
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATABASE_URL
+        sync: false          # se pega a mano: cadena de conexión de Neon
+      - key: JWT_SECRET
+        generateValue: true  # Render genera una clave aleatoria
+      - key: ZONA_HORARIA
+        value: America/Bogota
+      - key: CORS_ORIGIN_REGEX
+        value: https://.*\.vercel\.app

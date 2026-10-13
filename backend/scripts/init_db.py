@@ -1,5 +1,5 @@
 """
-Crea (o recrea) las 12 tablas ejecutando database/schema.sql contra DATABASE_URL.
+Crea (o recrea) las 14 tablas ejecutando database/schema.sql contra DATABASE_URL.
 
     python -m scripts.init_db
 
@@ -28,4 +28,4 @@ if __name__ == "__main__":
         if r.strip().lower() != "s":
             sys.exit("Cancelado.")
     crear_esquema(settings.DATABASE_URL)
-    print("✔ Esquema creado: 12 tablas + 4 roles base.")
+    print("✔ Esquema creado: 14 tablas, 3 roles, 9 módulos y sus permisos.")

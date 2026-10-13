@@ -42,7 +42,9 @@ class ComunicadoRepository(BaseRepository):
             SELECT c.*, u.nombre AS autor_nombre, cu.nombre AS curso_nombre,
                    EXISTS (SELECT 1 FROM confirmaciones_lectura cl
                            WHERE cl.comunicado_id = c.id AND cl.usuario_id = %(uid)s
-                             AND cl.estado = 'activo') AS confirmado_por_mi
+                             AND cl.estado = 'activo') AS confirmado_por_mi,
+                   (SELECT COUNT(*) FROM confirmaciones_lectura cl
+                     WHERE cl.comunicado_id = c.id AND cl.estado = 'activo') AS total_confirmados
             FROM comunicados c
             JOIN usuarios u ON u.id = c.autor_id
             LEFT JOIN cursos cu ON cu.id = c.curso_id

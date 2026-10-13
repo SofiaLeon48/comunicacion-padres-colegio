@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.core.deps import PERSONAL, requiere_roles
+from app.core.deps import PERSONAL, requiere_roles, requiere_modulo
 from app.repositories.reporte_repo import ReporteRepository
 
 router = APIRouter(prefix="/reportes", tags=["Reportes y Analítica"],
-                   dependencies=[Depends(requiere_roles(*PERSONAL))])
+                   dependencies=[Depends(requiere_roles(*PERSONAL)), Depends(requiere_modulo("reportes"))])
 repo = ReporteRepository()
 
 
