@@ -111,9 +111,10 @@ backend/
     │   ├── database.py         pool de conexiones + get_cursor() (commit/rollback)
     │   ├── security.py         bcrypt + JWT
     │   ├── deps.py             usuario_actual, requiere_roles(...)
+    │   ├── validacion.py       obligatorios() y campos(): qué pide cada ruta al crear y al editar
     │   └── errores.py          errores de PostgreSQL → HTTP 400/404/409/503
-    ├── models/              → Capa 2: validación (Pydantic)
-    │   └── modelos.py          UNA sola clase `Modelos` con todas las definiciones (Crear / Actualizar / Salida)
+    ├── models/              → Capa 2: UNA clase por tabla con todos sus atributos (13 archivos)
+    │   └── rol.py → class Rol, usuario.py → class Usuario, grupo.py → class Grupo…
     ├── repositories/        → Capa 3: SQL (patrón Repository)
     │   └── base.py             CRUD genérico heredado por los 12 repositories
     ├── services/            → Capa 4: lógica de negocio compartida
@@ -245,6 +246,6 @@ Las pruebas cubren:
 | Corrección | Cómo quedó |
 |---|---|
 | "Curso" debe llamarse "Grupo" | Tabla `grupos`, columnas `grupo_id`, rutas `/grupos`, módulo y menú "Grupos" |
-| Una sola clase en `models/` | `app/models/modelos.py` → clase `Modelos`; las rutas usan `Modelos.GrupoCrear`, `Modelos.GrupoSalida`, etc. |
+| Una sola clase por tabla en `models/` | 13 archivos, cada uno con UNA clase con todos los atributos de su tabla (`Rol`, `Usuario`, `Grupo`, `Mensaje`, `Citacion`…). La misma clase sirve para crear, editar y responder; cada ruta indica qué campos son obligatorios (`obligatorios`) y cuáles acepta (`campos`) |
 | Eliminar la tabla de logs | Se retiró `logs_actividad` con su repositorio, rutas, servicio y la bitácora de Reportes (quedan 13 tablas) |
 | No pedir datos automáticos | Verificado con pruebas (`tests/test_campos_automaticos.py`); además se quitó `estado` de los formularios de edición |

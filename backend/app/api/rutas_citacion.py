@@ -2,10 +2,12 @@ from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
-from app.core.config import ahora_local
+from app.core.config import a_hora_local, ahora_local
 from app.core.deps import (PERSONAL, UsuarioActual, es_gestion, no_encontrado, prohibido, requiere_modulo,
                            requiere_roles)
-from app.models.modelos import EstadoCitacion, Modelos
+from app.core.validacion import campos, obligatorios
+from app.models.asistencia_citacion import AsistenciaCitacion
+from app.models.citacion import Citacion
 from app.repositories.asistencia_citacion_repo import AsistenciaCitacionRepository
 from app.repositories.citacion_repo import CitacionRepository
 from app.repositories.estudiante_repo import EstudianteRepository
@@ -40,9 +42,9 @@ def _fecha(dt: datetime) -> str:
     return dt.strftime("%d/%m/%Y %I:%M %p")
 
 
-@router.get("/", response_model=list[Modelos.CitacionSalida])
+@router.get("/", response_model=list[Citacion])
 def listar_citaciones(usuario: UsuarioActual, desde: datetime | None = None, hasta: datetime | None = None,
-                      estudiante_id: int | None = None, estado_citacion: EstadoCitacion | None = None):
+                      estudiante_id: int | None = None, estado_citacion: str | None = None):
     """Usa `desde` y `hasta` para alimentar el **calendario** (ej. un mes).
     Cada rol ve lo suyo: acudiente → citaciones de sus hijos · docente → las que agendó ·
     coordinación/admin → todas."""
@@ -51,14 +53,16 @@ def listar_citaciones(usuario: UsuarioActual, desde: datetime | None = None, has
     return repo.listar_detallado(desde, hasta, docente_id, acudiente_id, estudiante_id, estado_citacion)
 
 
-@router.get("/{citacion_id}", response_model=Modelos.CitacionSalida)
+@router.get("/{citacion_id}", response_model=Citacion)
 def obtener_citacion(citacion_id: int, usuario: UsuarioActual):
     return _obtener_visible(citacion_id, usuario)
 
 
-@router.post("/", response_model=Modelos.CitacionSalida, status_code=201)
-def crear_citacion(datos: Modelos.CitacionCrear, tareas: BackgroundTasks, actor: dict = personal):
+@router.post("/", response_model=Citacion, status_code=201)
+def crear_citacion(datos: Citacion, tareas: BackgroundTasks, actor: dict = personal):
     """Agenda la cita y notifica a los acudientes del estudiante (o al acudiente indicado)."""
+    obligatorios(datos, "estudiante_id", "motivo", "fecha_hora")
+    datos.fecha_hora = a_hora_local(datos.fecha_hora)
     est = estudiantes.obtener(datos.estudiante_id)
     if not est:
         raise HTTPException(status_code=400, detail="El estudiante no existe o está inactivo.")
@@ -73,7 +77,8 @@ def crear_citacion(datos: Modelos.CitacionCrear, tareas: BackgroundTasks, actor:
             raise prohibido("Solo coordinación puede agendar a nombre de otro docente.")
         docente_id = datos.docente_id
 
-    nueva = repo.crear({**datos.model_dump(), "docente_id": docente_id})
+    nueva = repo.crear({**campos(datos, "estudiante_id", "acudiente_id", "motivo", "fecha_hora", "lugar"),
+                       "docente_id": docente_id})
     destino = repo.ids_acudientes_destino(nueva)
     notificar(destino, "citacion", f"Citación: {est['nombre']}",
               f"{datos.motivo} · {_fecha(datos.fecha_hora)}" + (f" · {datos.lugar}" if datos.lugar else ""),
@@ -81,13 +86,15 @@ def crear_citacion(datos: Modelos.CitacionCrear, tareas: BackgroundTasks, actor:
     return repo.obtener_detallado(nueva["id"])
 
 
-@router.patch("/{citacion_id}", response_model=Modelos.CitacionSalida)
-def actualizar_citacion(citacion_id: int, datos: Modelos.CitacionActualizar, tareas: BackgroundTasks,
+@router.patch("/{citacion_id}", response_model=Citacion)
+def actualizar_citacion(citacion_id: int, datos: Citacion, tareas: BackgroundTasks,
                         actor: dict = personal):
     c = _obtener_visible(citacion_id, actor)
     if not _puede_gestionar(c, actor):
         raise prohibido()
-    valores = datos.model_dump(exclude_unset=True)
+    valores = campos(datos, "motivo", "fecha_hora", "lugar", "acudiente_id", editar=True)
+    if valores.get("fecha_hora"):
+        valores["fecha_hora"] = a_hora_local(valores["fecha_hora"])
     if valores.get("fecha_hora") and valores["fecha_hora"] <= ahora_local():
         raise HTTPException(status_code=400, detail="La citación debe ser en una fecha futura.")
     if "acudiente_id" in valores and valores["acudiente_id"] and \
@@ -102,10 +109,11 @@ def actualizar_citacion(citacion_id: int, datos: Modelos.CitacionActualizar, tar
     return actualizada or repo.obtener(citacion_id, True)
 
 
-@router.patch("/{citacion_id}/estado", response_model=Modelos.CitacionSalida, summary="Confirmar / cancelar / realizar")
-def cambiar_estado(citacion_id: int, datos: Modelos.CambioEstadoCitacion, usuario: UsuarioActual):
+@router.patch("/{citacion_id}/estado", response_model=Citacion, summary="Confirmar / cancelar / realizar")
+def cambiar_estado(citacion_id: int, datos: Citacion, usuario: UsuarioActual):
     """- **Acudiente**: solo puede pasarla a `confirmada` (confirma que asistirá).
     - **Docente dueño / coordinación**: cualquier estado (`cancelada` notifica a los acudientes)."""
+    obligatorios(datos, "estado_citacion")
     c = _obtener_visible(citacion_id, usuario)
     nuevo = datos.estado_citacion
     if c["estado_citacion"] in ("cancelada", "realizada"):
@@ -126,7 +134,7 @@ def cambiar_estado(citacion_id: int, datos: Modelos.CambioEstadoCitacion, usuari
     return repo.obtener_detallado(citacion_id)
 
 
-@router.delete("/{citacion_id}", response_model=Modelos.Mensaje)
+@router.delete("/{citacion_id}")
 def eliminar_citacion(citacion_id: int, actor: dict = personal):
     c = _obtener_visible(citacion_id, actor)
     if not _puede_gestionar(c, actor):
@@ -136,7 +144,7 @@ def eliminar_citacion(citacion_id: int, actor: dict = personal):
 
 
 # ------------------------------------------------- asistencia (relación 1:1)
-@router.get("/{citacion_id}/asistencia", response_model=Modelos.AsistenciaSalida)
+@router.get("/{citacion_id}/asistencia", response_model=AsistenciaCitacion)
 def obtener_asistencia(citacion_id: int, usuario: UsuarioActual):
     _obtener_visible(citacion_id, usuario)
     a = asistencias.de_citacion(citacion_id)
@@ -145,25 +153,27 @@ def obtener_asistencia(citacion_id: int, usuario: UsuarioActual):
     return a
 
 
-@router.post("/{citacion_id}/asistencia", response_model=Modelos.AsistenciaSalida, status_code=201,
+@router.post("/{citacion_id}/asistencia", response_model=AsistenciaCitacion, status_code=201,
              summary="Registrar si el acudiente asistió (marca la citación como realizada)")
-def registrar_asistencia(citacion_id: int, datos: Modelos.AsistenciaCrear, actor: dict = personal):
+def registrar_asistencia(citacion_id: int, datos: AsistenciaCitacion, actor: dict = personal):
+    obligatorios(datos, "asistio")
     c = _obtener_visible(citacion_id, actor)
     if not _puede_gestionar(c, actor):
         raise prohibido()
     if c["estado_citacion"] == "cancelada":
         raise HTTPException(status_code=400, detail="No se registra asistencia en una citación cancelada.")
-    a = asistencias.crear({**datos.model_dump(), "citacion_id": citacion_id, "registrado_por": actor["id"]})
+    a = asistencias.crear({**campos(datos, "asistio", "observaciones"), "citacion_id": citacion_id,
+                          "registrado_por": actor["id"]})
     repo.actualizar(citacion_id, {"estado_citacion": "realizada"})
     return a
 
 
-@router.patch("/{citacion_id}/asistencia", response_model=Modelos.AsistenciaSalida)
-def actualizar_asistencia(citacion_id: int, datos: Modelos.AsistenciaActualizar, actor: dict = personal):
+@router.patch("/{citacion_id}/asistencia", response_model=AsistenciaCitacion)
+def actualizar_asistencia(citacion_id: int, datos: AsistenciaCitacion, actor: dict = personal):
     c = _obtener_visible(citacion_id, actor)
     if not _puede_gestionar(c, actor):
         raise prohibido()
     a = asistencias.de_citacion(citacion_id)
     if not a:
         raise no_encontrado("Registro de asistencia")
-    return asistencias.actualizar(a["id"], datos.model_dump(exclude_unset=True))
+    return asistencias.actualizar(a["id"], campos(datos, "asistio", "observaciones", editar=True))
