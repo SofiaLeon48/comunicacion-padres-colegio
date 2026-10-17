@@ -6,7 +6,7 @@ Orden: **1. Neon** (base de datos) → **2. Render** (API) → **3. Vercel** (fr
 
 1. En Neon, copia la cadena de conexión (**Connect → Connection string**, con *pooling* activado).
 2. En tu computador, en `backend/.env`, pon esa cadena en `DATABASE_URL`.
-3. Crea las 14 tablas y los datos de prueba:
+3. Crea las 13 tablas y los datos de prueba:
    ```
    cd backend
    venv\Scripts\activate
@@ -49,4 +49,4 @@ Demostración sugerida (2 navegadores o una ventana de incógnito):
 1. Docente publica un comunicado para el 5A → al acudiente le llega la notificación al instante.
 2. Acudiente confirma la lectura → en Neon aparece la fila en `confirmaciones_lectura`.
 3. Docente abre el comunicado y ve quién leyó y quién no.
-4. Coordinación activa "Cursos" para el rol Acudiente en **Configuración** → el menú del acudiente cambia (tabla `rol_modulo`).
+4. Coordinación activa "Grupos" para el rol Acudiente en **Configuración** → el menú del acudiente cambia (tabla `rol_modulo`).

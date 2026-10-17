@@ -1,0 +1,211 @@
+// Conecta Escolar · Comunicación Padres-Colegio en Tiempo Real
+// Diagrama entidad-relación (13 tablas) para https://dbdiagram.io
+// Pegar todo este texto en el panel izquierdo de dbdiagram.io
+
+Project conecta_escolar {
+  database_type: 'PostgreSQL'
+  Note: 'Todas las tablas tienen creado, modificado (trigger) y estado (borrado lógico activo/inactivo).'
+}
+
+// ===================== USUARIOS Y ROLES =====================
+Table roles {
+  id serial [pk]
+  nombre varchar(30) [not null, unique, note: 'coordinacion, docente, acudiente']
+  descripcion varchar(150)
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+}
+
+Table usuarios {
+  id serial [pk]
+  nombre varchar(100) [not null]
+  correo varchar(150) [not null, unique]
+  password_hash varchar(255) [not null, note: 'bcrypt']
+  telefono varchar(20)
+  rol_id integer [not null, ref: > roles.id]
+  ultimo_acceso timestamp
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+}
+
+// ===================== CONFIGURACIÓN =====================
+Table modulos {
+  id serial [pk]
+  clave varchar(30) [not null, unique]
+  nombre varchar(50) [not null]
+  descripcion varchar(150)
+  ruta varchar(80) [not null]
+  icono varchar(40) [not null, default: 'bi-grid']
+  orden smallint [not null, default: 0]
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+}
+
+Table rol_modulo {
+  id serial [pk]
+  rol_id integer [not null, ref: > roles.id]
+  modulo_id integer [not null, ref: > modulos.id]
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+  indexes {
+    (rol_id, modulo_id) [unique]
+  }
+  Note: 'Tabla puente M:N: qué módulos (menú) ve cada rol'
+}
+
+// ===================== ADMINISTRACIÓN =====================
+Table grupos {
+  id serial [pk]
+  nombre varchar(20) [not null, note: 'ej. 5A']
+  grado smallint [not null, note: '0 a 11']
+  jornada varchar(20) [not null, default: 'manana', note: 'manana, tarde, unica']
+  anio_lectivo smallint [not null, default: `extract(year from now())`]
+  director_id integer [ref: > usuarios.id, note: 'docente director de grupo']
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+  indexes {
+    (nombre, jornada, anio_lectivo) [unique]
+  }
+}
+
+Table estudiantes {
+  id serial [pk]
+  nombre varchar(100) [not null]
+  documento varchar(20) [not null, unique]
+  grupo_id integer [not null, ref: > grupos.id]
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+}
+
+Table acudiente_estudiante {
+  id serial [pk]
+  acudiente_id integer [not null, ref: > usuarios.id]
+  estudiante_id integer [not null, ref: > estudiantes.id]
+  parentesco varchar(30) [not null, default: 'acudiente']
+  es_principal boolean [not null, default: false]
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+  indexes {
+    (acudiente_id, estudiante_id) [unique]
+  }
+  Note: 'Tabla puente M:N: acudientes ↔ estudiantes'
+}
+
+// ===================== COMUNICADOS Y MENSAJERÍA =====================
+Table comunicados {
+  id serial [pk]
+  titulo varchar(150) [not null]
+  contenido text [not null]
+  grupo_id integer [ref: > grupos.id, note: 'NULL = circular general']
+  autor_id integer [not null, ref: > usuarios.id]
+  prioridad varchar(10) [not null, default: 'normal', note: 'normal, urgente']
+  requiere_confirmacion boolean [not null, default: true]
+  fecha_publicacion timestamp [not null, default: `now()`]
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+}
+
+Table confirmaciones_lectura {
+  id serial [pk]
+  comunicado_id integer [not null, ref: > comunicados.id]
+  usuario_id integer [not null, ref: > usuarios.id]
+  fecha_confirmacion timestamp [not null, default: `now()`]
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+  indexes {
+    (comunicado_id, usuario_id) [unique]
+  }
+}
+
+Table mensajes {
+  id serial [pk]
+  remitente_id integer [not null, ref: > usuarios.id]
+  grupo_id integer [ref: > grupos.id, note: 'chat del grupo']
+  destinatario_id integer [ref: > usuarios.id, note: 'mensaje directo']
+  contenido text [not null]
+  leido boolean [not null, default: false]
+  fecha_envio timestamp [not null, default: `now()`]
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+  Note: 'Va a un grupo O a un destinatario (solo uno)'
+}
+
+Table citaciones {
+  id serial [pk]
+  estudiante_id integer [not null, ref: > estudiantes.id]
+  docente_id integer [not null, ref: > usuarios.id]
+  acudiente_id integer [ref: > usuarios.id, note: 'NULL = todos los acudientes']
+  motivo varchar(255) [not null]
+  fecha_hora timestamp [not null]
+  lugar varchar(100)
+  estado_citacion varchar(20) [not null, default: 'pendiente', note: 'pendiente, confirmada, cancelada, realizada']
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+}
+
+Table asistencia_citaciones {
+  id serial [pk]
+  citacion_id integer [not null, unique, ref: - citaciones.id, note: 'relación 1:1']
+  asistio boolean [not null]
+  observaciones text
+  registrado_por integer [not null, ref: > usuarios.id]
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+}
+
+// ===================== NOTIFICACIONES =====================
+Table notificaciones {
+  id serial [pk]
+  usuario_id integer [not null, ref: > usuarios.id]
+  tipo varchar(20) [not null, note: 'comunicado, mensaje, citacion, sistema']
+  titulo varchar(150) [not null]
+  contenido varchar(255) [not null]
+  referencia_id integer [note: 'id del comunicado, mensaje o citación de origen']
+  leido boolean [not null, default: false]
+  enviado_correo boolean [not null, default: false]
+  fecha timestamp [not null, default: `now()`]
+  creado timestamp [not null, default: `now()`]
+  modificado timestamp [not null, default: `now()`]
+  estado varchar(20) [not null, default: 'activo']
+}
+
+// ===================== AGRUPACIÓN POR MÓDULO (colores) =====================
+TableGroup usuarios_y_roles [color: #1E40AF] {
+  roles
+  usuarios
+}
+
+TableGroup configuracion [color: #6B21A8] {
+  modulos
+  rol_modulo
+}
+
+TableGroup administracion [color: #047857] {
+  grupos
+  estudiantes
+  acudiente_estudiante
+}
+
+TableGroup comunicados_y_mensajeria [color: #B45309] {
+  comunicados
+  confirmaciones_lectura
+  mensajes
+  citaciones
+  asistencia_citaciones
+}
+
+TableGroup notificaciones_grupo [color: #B91C1C] {
+  notificaciones
+}

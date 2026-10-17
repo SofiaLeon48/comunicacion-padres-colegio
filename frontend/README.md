@@ -45,7 +45,7 @@ src/
     ├── login/                  → inicio de sesión con rol
     └── (app)/                  → plantilla: Encabezado + Menú + contenido + Pie
         ├── inicio/  comunicados/  mensajes/  citaciones/  estudiantes/
-        ├── cursos/  usuarios/  reportes/  configuracion/
+        ├── grupos/  usuarios/  reportes/  configuracion/
         └── perfil/  notificaciones/
 ```
 

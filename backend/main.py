@@ -10,8 +10,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (rutas_acudiente_estudiante, rutas_auth, rutas_catalogos, rutas_citacion,
-                     rutas_comunicado, rutas_configuracion, rutas_curso, rutas_estudiante,
-                     rutas_inicio, rutas_log_actividad, rutas_mensaje, rutas_notificacion,
+                     rutas_comunicado, rutas_configuracion, rutas_grupo, rutas_estudiante,
+                     rutas_inicio, rutas_mensaje, rutas_notificacion,
                      rutas_reportes, rutas_rol, rutas_tiempo_real, rutas_usuario)
 from app.core.config import settings
 from app.core.database import cerrar_pool, get_cursor
@@ -28,7 +28,7 @@ app = FastAPI(
     title="API de Comunicación Padres-Colegio",
     description=(
         "Plataforma oficial de comunicación entre el colegio y los acudientes: circulares digitales "
-        "con confirmación de lectura, mensajería por curso y directa, calendario de citaciones, "
+        "con confirmación de lectura, mensajería por grupo y directa, calendario de citaciones, "
         "notificaciones en tiempo real y reportes.\n\n"
         "**Cómo probar:** clic en **Authorize** e inicia sesión con un usuario de prueba "
         "(ver README)."
@@ -55,7 +55,7 @@ app.include_router(rutas_usuario.router)
 app.include_router(rutas_inicio.router)
 app.include_router(rutas_catalogos.router)
 # Módulo: Administración
-app.include_router(rutas_curso.router)
+app.include_router(rutas_grupo.router)
 app.include_router(rutas_estudiante.router)
 app.include_router(rutas_acudiente_estudiante.router)
 # Módulo: Comunicados y Mensajería (principal)
@@ -67,7 +67,6 @@ app.include_router(rutas_notificacion.router)
 app.include_router(rutas_tiempo_real.router)
 # Módulo: Reportes y Analítica
 app.include_router(rutas_reportes.router)
-app.include_router(rutas_log_actividad.router)
 # Módulo: Configuración (roles, módulos y permisos rol x módulo)
 app.include_router(rutas_rol.router)
 app.include_router(rutas_configuracion.router)
