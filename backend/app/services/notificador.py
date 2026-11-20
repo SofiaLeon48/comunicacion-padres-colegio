@@ -7,6 +7,8 @@ Servicio de notificaciones: el punto único por donde pasa todo aviso.
 """
 from fastapi import BackgroundTasks
 
+from app.core.config import settings
+
 from app.repositories.notificacion_repo import NotificacionRepository
 from app.repositories.usuario_repo import UsuarioRepository
 from app.services.correo import correo_habilitado, enviar_correo
@@ -22,7 +24,7 @@ def notificar(usuario_ids: list[int], tipo: str, titulo: str, contenido: str,
     filas = _notificaciones.crear_para_varios(usuario_ids, tipo, titulo, contenido, referencia_id)
     for fila in filas:
         gestor.enviar([fila["usuario_id"]], "notificacion", fila)
-    if por_correo and correo_habilitado() and filas:
+    if por_correo and settings.NOTIFICAR_POR_CORREO and correo_habilitado() and filas:
         if tareas is not None:
             tareas.add_task(_enviar_correos, filas, titulo, contenido)
         else:

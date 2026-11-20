@@ -30,6 +30,8 @@ def generar(prompt: str, como_json: bool = False, temperatura: float = 0.6) -> s
         raise HTTPException(status_code=503, detail="La IA no está configurada (falta GEMINI_API_KEY en el servidor).")
     cuerpo = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        # Gemini 3.x: se deja la temperatura por defecto (bajarla degrada las respuestas)
+        # y se usa razonamiento "low" para que responda rápido.
         "generationConfig": {"thinkingConfig": {"thinkingLevel": "low"}},
     }
     if como_json:

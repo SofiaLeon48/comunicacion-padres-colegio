@@ -46,10 +46,13 @@ class Settings:
     BREVO_API_KEY: str = os.getenv("BREVO_API_KEY", "")
     CORREO_REMITENTE: str = os.getenv("CORREO_REMITENTE", os.getenv("SMTP_REMITENTE", ""))
     CORREO_REMITENTE_NOMBRE: str = os.getenv("CORREO_REMITENTE_NOMBRE", "Conecta Escolar")
+    # Avisos por correo a acudientes (comunicados, citaciones). Apagado por defecto porque
+    # los usuarios de prueba tienen correos inventados; los reportes se envían igual.
+    NOTIFICAR_POR_CORREO: bool = os.getenv("NOTIFICAR_POR_CORREO", "false").lower() == "true"
 
     # Inteligencia artificial (Google Gemini). Sin llave, las funciones de IA quedan desactivadas.
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
 
     # Tablero publicado: llave del enlace público (iframe). Si está vacía se deriva de JWT_SECRET.
     TABLERO_TOKEN: str = os.getenv("TABLERO_TOKEN", "")
