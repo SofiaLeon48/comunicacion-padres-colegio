@@ -30,12 +30,12 @@ def generar(prompt: str, como_json: bool = False, temperatura: float = 0.6) -> s
         raise HTTPException(status_code=503, detail="La IA no está configurada (falta GEMINI_API_KEY en el servidor).")
     cuerpo = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": temperatura},
+        "generationConfig": {"thinkingConfig": {"thinkingLevel": "low"}},
     }
     if como_json:
         cuerpo["generationConfig"]["responseMimeType"] = "application/json"
     try:
-        r = httpx.post(URL.format(modelo=settings.GEMINI_MODEL), json=cuerpo, timeout=40,
+        r = httpx.post(URL.format(modelo=settings.GEMINI_MODEL), json=cuerpo, timeout=90,
                        headers={"x-goog-api-key": settings.GEMINI_API_KEY})
         r.raise_for_status()
         datos = r.json()

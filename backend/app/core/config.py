@@ -49,7 +49,7 @@ class Settings:
 
     # Inteligencia artificial (Google Gemini). Sin llave, las funciones de IA quedan desactivadas.
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
     # Tablero publicado: llave del enlace público (iframe). Si está vacía se deriva de JWT_SECRET.
     TABLERO_TOKEN: str = os.getenv("TABLERO_TOKEN", "")
