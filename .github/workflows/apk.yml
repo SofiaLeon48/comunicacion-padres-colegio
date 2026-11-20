@@ -1,5 +1,4 @@
 # Genera la APK de Conecta Escolar (Capacitor) en la nube de GitHub.
-# Se ejecuta en cada push a main que cambie el frontend, o a mano desde la pestaña Actions.
 # Resultado: pestaña Actions → la ejecución → "Artifacts" → ConectaEscolar-apk (contiene la .apk).
 name: APK Android
 
@@ -16,23 +15,20 @@ jobs:
       run:
         working-directory: frontend
     env:
-      # URL pública de la API. Se puede cambiar en Settings → Secrets and variables → Actions → Variables.
       VITE_API_URL: ${{ vars.VITE_API_URL || 'https://conecta-escolar-api.onrender.com' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-
-      - uses: android-actions/setup-android@v3
 
       - name: Instalar dependencias
         run: npm ci
@@ -40,6 +36,7 @@ jobs:
       - name: Compilar la app web y copiarla al proyecto Android
         run: npm run build:movil
 
+      # El servidor de GitHub ya trae el SDK de Android instalado.
       - name: Compilar la APK
         working-directory: frontend/android
         run: |
