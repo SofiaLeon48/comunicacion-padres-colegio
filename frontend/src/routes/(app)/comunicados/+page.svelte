@@ -28,6 +28,29 @@
 	let guardando = $state(false);
 	let form = $state(vacio());
 
+	// Asistente de redacción con IA (Gemini)
+	let iaHabilitada = $state(false);
+	let ia = $state({ abierto: false, idea: '', tono: 'formal', generando: false });
+
+	async function redactarConIA() {
+		if (ia.idea.trim().length < 10) return error('Describe la idea con al menos 10 caracteres.');
+		ia.generando = true;
+		try {
+			const r = await api.post('/ia/redactar-comunicado', {
+				idea: ia.idea, tono: ia.tono,
+				destinatarios: form.grupo_id ? 'los acudientes del grupo seleccionado' : 'todos los acudientes del colegio'
+			});
+			form.titulo = r.titulo;
+			form.contenido = r.contenido;
+			if (ia.tono === 'urgente') form.prioridad = 'urgente';
+			exito('Borrador generado con IA. Revísalo y ajústalo antes de publicar.');
+		} catch (e) {
+			error(e);
+		} finally {
+			ia.generando = false;
+		}
+	}
+
 	function vacio() {
 		return { titulo: '', contenido: '', grupo_id: null, prioridad: 'normal', requiere_confirmacion: true };
 	}
@@ -52,7 +75,10 @@
 			cargando = false;
 		}
 	}
-	onMount(cargar);
+	onMount(() => {
+		cargar();
+		if (esPersonal()) api.get('/ia/estado').then((r) => (iaHabilitada = r.habilitada)).catch(() => {});
+	});
 	const quitar = alRecibir((m) => m.evento === 'notificacion' && m.datos.tipo === 'comunicado' && cargar());
 	onDestroy(quitar);
 
@@ -219,6 +245,34 @@
 <Modal bind:abierto={modalForm} variante={editando ? 'editar' : 'crear'} tamano="lg"
 	titulo={editando ? 'Editar comunicado' : 'Nuevo comunicado'}>
 	<form id="form-comunicado" onsubmit={guardar} class="row g-3">
+		{#if iaHabilitada}
+			<div class="col-12">
+				<div class="caja-ia rounded-3 p-3">
+					<button type="button" class="btn btn-sm btn-link p-0 text-decoration-none fw-semibold text-ia" onclick={() => (ia.abierto = !ia.abierto)}>
+						<i class="bi bi-stars me-1"></i>Redactar con inteligencia artificial <i class="bi bi-chevron-{ia.abierto ? 'up' : 'down'} ms-1"></i>
+					</button>
+					{#if ia.abierto}
+						<div class="row g-2 mt-1">
+							<div class="col-md-9">
+								<textarea class="form-control form-control-sm" rows="2" bind:value={ia.idea} maxlength="600"
+									placeholder="Ej.: reunión de padres el viernes 21 a las 7 a. m. en el auditorio para entregar boletines"></textarea>
+							</div>
+							<div class="col-md-3 d-flex flex-column gap-2">
+								<select class="form-select form-select-sm" bind:value={ia.tono} aria-label="Tono">
+									<option value="formal">Tono formal</option>
+									<option value="cercano">Tono cercano</option>
+									<option value="urgente">Tono urgente</option>
+								</select>
+								<button type="button" class="btn btn-sm btn-ia" onclick={redactarConIA} disabled={ia.generando}>
+									{#if ia.generando}<span class="spinner-border spinner-border-sm me-1"></span>Generando…{:else}<i class="bi bi-magic me-1"></i>Generar{/if}
+								</button>
+							</div>
+						</div>
+						<div class="small text-muted mt-2">Gemini propone el título y el contenido; tú decides qué publicar.</div>
+					{/if}
+				</div>
+			</div>
+		{/if}
 		<div class="col-12">
 			<label class="form-label" for="c-titulo">Título <span class="text-danger">*</span></label>
 			<input id="c-titulo" class="form-control" bind:value={form.titulo} required minlength="3" maxlength="150"

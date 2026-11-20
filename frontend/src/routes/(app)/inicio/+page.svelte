@@ -50,7 +50,7 @@
 			{#if d.rol === 'coordinacion'}
 				<div class="col-6 col-xl-3"><TarjetaIndicador titulo="Usuarios activos" valor={d.indicadores.usuarios_activos} icono="bi-people" href={enlace('usuarios', '/usuarios')} /></div>
 				<div class="col-6 col-xl-3"><TarjetaIndicador titulo="Estudiantes" valor={d.indicadores.estudiantes} icono="bi-mortarboard" color="success" detalle="{d.indicadores.grupos} grupos" href={enlace('estudiantes', '/estudiantes')} /></div>
-				<div class="col-6 col-xl-3"><TarjetaIndicador titulo="Lectura promedio de circulares" valor="{d.lectura_promedio}%" icono="bi-check2-all" color="info" href={enlace('reportes', '/reportes')} /></div>
+				<div class="col-6 col-xl-3"><TarjetaIndicador titulo="Lectura promedio de circulares" valor="{d.lectura_promedio}%" icono="bi-check2-all" color="info" href={enlace('tablero', '/tablero')} /></div>
 				<div class="col-6 col-xl-3"><TarjetaIndicador titulo="Citaciones próximas" valor={d.total_citaciones_proximas} icono="bi-calendar-event" color="warning" href={enlace('citaciones', '/citaciones')} /></div>
 			{:else if d.rol === 'docente'}
 				<div class="col-6 col-xl-3"><TarjetaIndicador titulo="Comunicados publicados" valor={d.comunicados_publicados} icono="bi-megaphone" href={enlace('comunicados', '/comunicados')} /></div>

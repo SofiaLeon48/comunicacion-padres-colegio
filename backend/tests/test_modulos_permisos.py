@@ -3,8 +3,8 @@
 
 def test_mis_modulos_por_rol(client, login):
     claves = lambda q: [m["clave"] for m in client.get("/auth/mis-modulos", headers=login(q)).json()]
-    assert len(claves("coord")) == 9
-    assert claves("doc1") == ["inicio", "comunicados", "mensajes", "citaciones", "estudiantes", "grupos", "reportes"]
+    assert len(claves("coord")) == 10
+    assert claves("doc1") == ["inicio", "comunicados", "mensajes", "citaciones", "estudiantes", "grupos", "tablero", "reportes"]
     assert claves("jorge") == ["inicio", "comunicados", "mensajes", "citaciones", "estudiantes"]
 
 

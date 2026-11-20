@@ -41,7 +41,7 @@ body { background: var(--ce-fondo); }
 /* ---------- Menú de navegación ---------- */
 .menu-nav { position: sticky; top: 56px; z-index: 1020; box-shadow: 0 2px 6px rgba(18,59,109,.05); }
 .nav-modulos { list-style: none; margin: 0; padding: 0; display: flex; gap: .25rem; overflow-x: auto; }
-.nav-modulos a { display: flex; align-items: center; gap: .45rem; padding: .85rem .7rem; font-size: .95rem; color: #4b5b70; text-decoration: none; font-weight: 500; border-bottom: 3px solid transparent; white-space: nowrap; transition: color .15s, border-color .15s; }
+.nav-modulos a { display: flex; align-items: center; gap: .35rem; padding: .85rem .45rem; font-size: .9rem; color: #4b5b70; text-decoration: none; font-weight: 500; border-bottom: 3px solid transparent; white-space: nowrap; transition: color .15s, border-color .15s; }
 .nav-modulos a:hover { color: var(--ce-azul); }
 .nav-modulos a.activo { color: var(--ce-azul-2); border-bottom-color: var(--ce-azul-2); }
 .nav-modulos i { font-size: 1.1rem; }
@@ -111,3 +111,21 @@ a.tarjeta-indicador:hover { transform: translateY(-2px); }
 .aviso-success { border-left: 4px solid var(--bs-success) !important; }
 .aviso-danger { border-left: 4px solid var(--bs-danger) !important; }
 .aviso-primary { border-left: 4px solid var(--bs-primary) !important; }
+
+/* ---------- Corte 3: IA, tablero y app móvil ---------- */
+.caja-ia { background: linear-gradient(90deg, #f5f3ff, #eef5ff); border: 1px solid #ddd6fe; }
+.text-ia { color: #6d28d9; }
+.btn-ia { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+.btn-ia:hover, .btn-ia:focus { background: #6d28d9; border-color: #6d28d9; color: #fff; }
+.analisis-ia { white-space: pre-line; }
+.marco-tablero { width: 100%; border: 0; border-radius: .9rem; background: #f1f5f9; display: block; min-height: 600px; }
+
+/* Áreas seguras del celular (barra de estado / muesca) cuando corre como app con Capacitor */
+.encabezado { padding-top: env(safe-area-inset-top, 0px); }
+.menu-nav { top: calc(56px + env(safe-area-inset-top, 0px)); }
+body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Tablas: nunca desbordan la pantalla del celular (se desplazan dentro de su tarjeta) */
+.tabla-datos .dt-layout-table { margin-left: 0; margin-right: 0; }
+.tabla-datos .dt-layout-table > * { overflow-x: auto; max-width: 100%; padding-left: 0; padding-right: 0; }
+@media (max-width: 576px) { .tabla-datos div.dt-container .dt-search input { min-width: 0; width: 100%; } }

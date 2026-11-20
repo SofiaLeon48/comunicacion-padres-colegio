@@ -17,5 +17,11 @@ services:
         generateValue: true  # Render genera una clave aleatoria
       - key: ZONA_HORARIA
         value: America/Bogota
-      - key: CORS_ORIGIN_REGEX
-        value: https://.*\.vercel\.app
+      - key: CORS_ORIGIN_REGEX     # Vercel + app móvil (Capacitor)
+        value: (https://.*\.vercel\.app|https?://localhost|capacitor://localhost)
+      - key: BREVO_API_KEY         # correo por API (Render gratis bloquea SMTP)
+        sync: false
+      - key: CORREO_REMITENTE      # correo verificado en Brevo
+        sync: false
+      - key: GEMINI_API_KEY        # IA: Google AI Studio → Get API key
+        sync: false

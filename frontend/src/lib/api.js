@@ -54,6 +54,21 @@ export async function solicitud(metodo, ruta, cuerpo) {
 	return datos;
 }
 
+/** Descarga un archivo protegido (PDF / Excel). Devuelve { blob, nombre }. */
+export async function descargar(ruta, nombrePorDefecto = 'archivo') {
+	const headers = sesion.token ? { Authorization: `Bearer ${sesion.token}` } : {};
+	let r;
+	try {
+		r = await fetch(API_URL + ruta, { headers });
+	} catch {
+		throw new Error('No se pudo conectar con el servidor. Verifica que la API esté encendida.');
+	}
+	if (!r.ok) throw new Error(mensajeError(await r.json().catch(() => null), r.status));
+	const disp = r.headers.get('Content-Disposition') || '';
+	const nombre = /filename="?([^";]+)"?/.exec(disp)?.[1] || nombrePorDefecto;
+	return { blob: await r.blob(), nombre };
+}
+
 export const api = {
 	get: (ruta) => solicitud('GET', ruta),
 	post: (ruta, cuerpo = {}) => solicitud('POST', ruta, cuerpo),

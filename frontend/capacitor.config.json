@@ -1,0 +1,11 @@
+{
+  "appId": "co.edu.conectaescolar.app",
+  "appName": "Conecta Escolar",
+  "webDir": "build",
+  "server": { "androidScheme": "https" },
+  "android": { "allowMixedContent": false },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 1200, "backgroundColor": "#123b6d", "showSpinner": false },
+    "StatusBar": { "backgroundColor": "#123b6d", "style": "DARK", "overlaysWebView": false }
+  }
+}

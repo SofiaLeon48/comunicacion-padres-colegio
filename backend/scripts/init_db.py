@@ -28,4 +28,4 @@ if __name__ == "__main__":
         if r.strip().lower() != "s":
             sys.exit("Cancelado.")
     crear_esquema(settings.DATABASE_URL)
-    print("✔ Esquema creado: 13 tablas, 3 roles, 9 módulos y sus permisos.")
+    print("✔ Esquema creado: 13 tablas, 3 roles, 10 módulos y sus permisos.")

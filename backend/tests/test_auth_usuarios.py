@@ -17,7 +17,7 @@ def test_login_con_rol_devuelve_token_y_menu(client):
     cuerpo = r.json()
     assert cuerpo["access_token"] and cuerpo["usuario"]["rol"] == "coordinacion"
     assert "password_hash" not in cuerpo["usuario"]
-    assert len(cuerpo["modulos"]) == 9 and cuerpo["modulos"][0]["clave"] == "inicio"
+    assert len(cuerpo["modulos"]) == 10 and cuerpo["modulos"][0]["clave"] == "inicio"
 
 
 def test_login_con_rol_equivocado_403(client):

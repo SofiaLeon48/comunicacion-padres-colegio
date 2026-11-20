@@ -50,3 +50,65 @@ Demostración sugerida (2 navegadores o una ventana de incógnito):
 2. Acudiente confirma la lectura → en Neon aparece la fila en `confirmaciones_lectura`.
 3. Docente abre el comunicado y ve quién leyó y quién no.
 4. Coordinación activa "Grupos" para el rol Acudiente en **Configuración** → el menú del acudiente cambia (tabla `rol_modulo`).
+
+---
+
+# Corte 3: Tablero, Reportes, IA y app móvil (APK)
+
+Haz estos pasos **una sola vez**, en este orden.
+
+## A. Subir el código
+En la carpeta del proyecto de tu computador:
+```
+git add .
+git commit -m "Corte 3: tablero, reportes PDF/Excel, IA y app movil"
+git push
+```
+Render (API) y Vercel (web) se actualizan solos con el push. GitHub empieza a compilar la APK.
+
+## B. Actualizar la base de datos de Neon (sin borrar nada)
+Con `backend/.env` apuntando a Neon:
+```
+cd backend
+venv\Scripts\activate
+pip install -r requirements.txt
+python -m scripts.migrar_corte3
+```
+Debe decir `✔ Migración aplicada` y listar el módulo `tablero`. (Agrega el módulo Tablero y sus permisos.)
+
+## C. Crear las llaves gratuitas
+**Correo — Brevo**
+1. Crea una cuenta en https://www.brevo.com (gratis, 300 correos al día).
+2. **Senders, domains & dedicated IPs → Senders → Add a sender**: agrega tu correo (p. ej. tu Gmail) y confírmalo desde el enlace que te llega.
+3. **SMTP & API → API Keys → Generate a new API key**. Copia la llave (empieza por `xkeysib-`).
+
+**Inteligencia artificial — Gemini**
+1. Entra a https://aistudio.google.com/apikey con tu cuenta de Google.
+2. **Create API key** y cópiala.
+
+## D. Variables en Render
+Render → tu servicio → **Environment** → agrega o cambia:
+
+| Variable | Valor |
+|---|---|
+| `BREVO_API_KEY` | la llave de Brevo |
+| `CORREO_REMITENTE` | el correo que verificaste en Brevo |
+| `GEMINI_API_KEY` | la llave de Google AI Studio |
+| `CORS_ORIGIN_REGEX` | `(https://.*\.vercel\.app\|https?://localhost\|capacitor://localhost)` |
+
+Clic en **Save, rebuild and deploy**. La última variable permite que la app del celular hable con la API.
+
+## E. Descargar e instalar la APK
+1. GitHub → tu repositorio → pestaña **Actions** → **APK Android** → la ejecución más reciente (verde, ~6 min).
+   Si tu API no está en `https://conecta-escolar-api.onrender.com`, antes crea la variable
+   **Settings → Secrets and variables → Actions → Variables → `VITE_API_URL`** con tu URL y vuelve a ejecutar (**Run workflow**).
+2. Abajo, en **Artifacts**, descarga **ConectaEscolar-apk** (es un .zip con `ConectaEscolar.apk` adentro).
+3. Pasa la `.apk` al celular (WhatsApp a ti misma, Drive o cable) y ábrela. Android pedirá permitir
+   **instalar apps de origen desconocido** para esa app: acéptalo e instala.
+
+## F. Verificar antes de presentar
+- `https://TU-API.onrender.com/salud` → `"base_de_datos": "ok"` (despierta la API 5 minutos antes).
+- Web: módulos **Tablero** y **Reportes** en el menú de Coordinación.
+- Reportes → **Enviar por correo** llega a tu bandeja (revisa spam la primera vez).
+- Comunicados → **Nuevo** → **Redactar con inteligencia artificial**.
+- Celular: abrir la app, iniciar sesión, ver el Tablero y descargar un PDF.

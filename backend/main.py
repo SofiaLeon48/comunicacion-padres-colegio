@@ -5,14 +5,16 @@ Ejecutar:   uvicorn main:app --reload
 Documentación interactiva:  http://127.0.0.1:8000/docs
 """
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api import (rutas_acudiente_estudiante, rutas_auth, rutas_catalogos, rutas_citacion,
                      rutas_comunicado, rutas_configuracion, rutas_grupo, rutas_estudiante,
                      rutas_inicio, rutas_mensaje, rutas_notificacion,
-                     rutas_reportes, rutas_rol, rutas_tiempo_real, rutas_usuario)
+                     rutas_ia, rutas_reportes, rutas_rol, rutas_tablero, rutas_tiempo_real, rutas_usuario)
 from app.core.config import settings
 from app.core.database import cerrar_pool, get_cursor
 from app.core.errores import registrar_manejadores
@@ -49,6 +51,9 @@ app.add_middleware(
 
 registrar_manejadores(app)
 
+# Archivos estáticos de la página publicada del tablero (Chart.js)
+app.mount("/static", StaticFiles(directory=Path(__file__).resolve().parent / "app" / "static"), name="static")
+
 # Módulo: Usuarios y Roles
 app.include_router(rutas_auth.router)
 app.include_router(rutas_usuario.router)
@@ -65,8 +70,11 @@ app.include_router(rutas_citacion.router)
 # Módulo: Notificaciones
 app.include_router(rutas_notificacion.router)
 app.include_router(rutas_tiempo_real.router)
-# Módulo: Reportes y Analítica
+# Módulo: Tablero (dashboard publicado) y Reportes (PDF / Excel / correo)
+app.include_router(rutas_tablero.router)
 app.include_router(rutas_reportes.router)
+# Inteligencia artificial (Google Gemini)
+app.include_router(rutas_ia.router)
 # Módulo: Configuración (roles, módulos y permisos rol x módulo)
 app.include_router(rutas_rol.router)
 app.include_router(rutas_configuracion.router)

@@ -113,3 +113,74 @@ class ReporteRepository(BaseRepository):
             GROUP BY u.id ORDER BY pendientes DESC, u.nombre
             LIMIT %s
         """, (limite,))
+
+    # ------------------------------------------------------------------
+    # Reportes exportables (PDF / Excel). Sin IDs: solo datos legibles.
+    # Filtros comunes: rango de fechas, grupo y estado/prioridad.
+    # ------------------------------------------------------------------
+    def reporte_comunicados(self, desde=None, hasta=None, grupo_id=None, prioridad=None) -> list[dict]:
+        """Comunicados + grupos + usuarios (autor) + confirmaciones + acudientes destinatarios."""
+        return self._todos("""
+            WITH destinatarios AS (
+                SELECT c.id, COUNT(DISTINCT ae.acudiente_id) AS total
+                FROM comunicados c
+                JOIN estudiantes e ON (c.grupo_id IS NULL OR e.grupo_id = c.grupo_id) AND e.estado = 'activo'
+                JOIN acudiente_estudiante ae ON ae.estudiante_id = e.id AND ae.estado = 'activo'
+                GROUP BY c.id
+            ),
+            confirmados AS (
+                SELECT comunicado_id AS id, COUNT(*) AS total
+                FROM confirmaciones_lectura WHERE estado = 'activo' GROUP BY comunicado_id
+            )
+            SELECT c.fecha_publicacion                       AS fecha,
+                   c.titulo,
+                   COALESCE(g.nombre, 'Todos los grupos')    AS grupo,
+                   u.nombre                                  AS autor,
+                   INITCAP(c.prioridad)                      AS prioridad,
+                   COALESCE(d.total, 0)                      AS destinatarios,
+                   COALESCE(cf.total, 0)                     AS confirmados,
+                   CASE WHEN NOT c.requiere_confirmacion OR COALESCE(d.total, 0) = 0 THEN NULL
+                        ELSE ROUND(100.0 * COALESCE(cf.total, 0) / d.total, 1) END AS lectura
+            FROM comunicados c
+            JOIN usuarios u           ON u.id = c.autor_id
+            LEFT JOIN grupos g        ON g.id = c.grupo_id
+            LEFT JOIN destinatarios d ON d.id = c.id
+            LEFT JOIN confirmados cf  ON cf.id = c.id
+            WHERE c.estado = 'activo'
+              AND (%(d)s::date IS NULL OR c.fecha_publicacion::date >= %(d)s)
+              AND (%(h)s::date IS NULL OR c.fecha_publicacion::date <= %(h)s)
+              AND (%(g)s::int  IS NULL OR c.grupo_id = %(g)s)
+              AND (%(e)s::text IS NULL OR c.prioridad = %(e)s)
+            ORDER BY c.fecha_publicacion DESC
+        """, {"d": desde, "h": hasta, "g": grupo_id, "e": prioridad})
+
+    def reporte_citaciones(self, desde=None, hasta=None, grupo_id=None, estado=None) -> list[dict]:
+        """Citaciones + estudiantes + grupos + usuarios (docente y acudiente) + asistencia."""
+        return self._todos("""
+            SELECT ci.fecha_hora                                    AS fecha,
+                   e.nombre                                         AS estudiante,
+                   g.nombre                                         AS grupo,
+                   d.nombre                                         AS docente,
+                   COALESCE(a.nombre, 'Todos los acudientes')       AS acudiente,
+                   ci.motivo,
+                   COALESCE(ci.lugar, '—')                          AS lugar,
+                   INITCAP(ci.estado_citacion)                      AS estado,
+                   CASE WHEN asi.id IS NULL THEN 'Sin registrar'
+                        WHEN asi.asistio THEN 'Asistió' ELSE 'No asistió' END AS asistencia
+            FROM citaciones ci
+            JOIN estudiantes e ON e.id = ci.estudiante_id
+            JOIN grupos g      ON g.id = e.grupo_id
+            JOIN usuarios d    ON d.id = ci.docente_id
+            LEFT JOIN usuarios a ON a.id = ci.acudiente_id
+            LEFT JOIN asistencia_citaciones asi ON asi.citacion_id = ci.id AND asi.estado = 'activo'
+            WHERE ci.estado = 'activo'
+              AND (%(d)s::date IS NULL OR ci.fecha_hora::date >= %(d)s)
+              AND (%(h)s::date IS NULL OR ci.fecha_hora::date <= %(h)s)
+              AND (%(g)s::int  IS NULL OR e.grupo_id = %(g)s)
+              AND (%(e)s::text IS NULL OR ci.estado_citacion = %(e)s)
+            ORDER BY ci.fecha_hora DESC
+        """, {"d": desde, "h": hasta, "g": grupo_id, "e": estado})
+
+    def nombre_grupo(self, grupo_id: int) -> str | None:
+        fila = self._uno("SELECT nombre FROM grupos WHERE id = %s", (grupo_id,))
+        return fila["nombre"] if fila else None

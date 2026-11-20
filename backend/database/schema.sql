@@ -299,7 +299,7 @@ CREATE INDEX ix_citaciones_estudiante   ON citaciones (estudiante_id);
 
 
 -- =====================================================================
---  Datos base: 3 roles, 9 módulos y permisos (rol x módulo)
+--  Datos base: 3 roles, 10 módulos y permisos (rol x módulo)
 -- =====================================================================
 INSERT INTO roles (nombre, descripcion) VALUES
     ('coordinacion', 'Coordinación: administra la plataforma y la comunicación institucional'),
@@ -314,14 +314,15 @@ INSERT INTO modulos (clave, nombre, descripcion, ruta, icono, orden) VALUES
     ('estudiantes',   'Estudiantes',   'Estudiantes y sus acudientes',                  '/estudiantes',   'bi-mortarboard',    5),
     ('grupos',        'Grupos',        'Grupos, jornadas y directores de grupo',        '/grupos',        'bi-easel',          6),
     ('usuarios',      'Usuarios',      'Cuentas de acceso a la plataforma',             '/usuarios',      'bi-people',         7),
-    ('reportes',      'Reportes',      'Indicadores, lectura de circulares y auditoría','/reportes',      'bi-bar-chart-line', 8),
-    ('configuracion', 'Configuración', 'Roles, módulos y permisos',                     '/configuracion', 'bi-gear',           9);
+    ('tablero',       'Tablero',       'Dashboard de indicadores publicado (iframe)',   '/tablero',       'bi-speedometer2',   8),
+    ('reportes',      'Reportes',      'Reportes en PDF y Excel con envío por correo',  '/reportes',      'bi-file-earmark-bar-graph', 9),
+    ('configuracion', 'Configuración', 'Roles, módulos y permisos',                     '/configuracion', 'bi-gear',           10);
 
 -- Matriz de permisos
 INSERT INTO rol_modulo (rol_id, modulo_id)
 SELECT r.id, m.id FROM roles r JOIN modulos m ON
     (r.nombre = 'coordinacion')
- OR (r.nombre = 'docente'   AND m.clave IN ('inicio','comunicados','mensajes','citaciones','estudiantes','grupos','reportes'))
+ OR (r.nombre = 'docente'   AND m.clave IN ('inicio','comunicados','mensajes','citaciones','estudiantes','grupos','tablero','reportes'))
  OR (r.nombre = 'acudiente' AND m.clave IN ('inicio','comunicados','mensajes','citaciones','estudiantes'));
 
 -- =====================================================================

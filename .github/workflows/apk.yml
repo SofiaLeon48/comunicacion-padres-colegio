@@ -1,0 +1,54 @@
+# Genera la APK de Conecta Escolar (Capacitor) en la nube de GitHub.
+# Se ejecuta en cada push a main que cambie el frontend, o a mano desde la pestaña Actions.
+# Resultado: pestaña Actions → la ejecución → "Artifacts" → ConectaEscolar-apk (contiene la .apk).
+name: APK Android
+
+on:
+  push:
+    branches: [main]
+    paths: ['frontend/**', '.github/workflows/apk.yml']
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # URL pública de la API. Se puede cambiar en Settings → Secrets and variables → Actions → Variables.
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://conecta-escolar-api.onrender.com' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar la app web y copiarla al proyecto Android
+        run: npm run build:movil
+
+      - name: Compilar la APK
+        working-directory: frontend/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../../ConectaEscolar.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ConectaEscolar-apk
+          path: ConectaEscolar.apk
+          retention-days: 30

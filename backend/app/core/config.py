@@ -30,7 +30,9 @@ class Settings:
     ]
 
     # Además se acepta cualquier subdominio que cumpla esta expresión (p. ej. despliegues de Vercel)
-    CORS_ORIGIN_REGEX: str = os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app")
+    # La app móvil (Capacitor) llama desde https://localhost o capacitor://localhost.
+    CORS_ORIGIN_REGEX: str = os.getenv(
+        "CORS_ORIGIN_REGEX", r"(https://.*\.vercel\.app|https?://localhost|capacitor://localhost)")
 
     # Correo (opcional). Si SMTP_HOST está vacío, no se envían correos.
     SMTP_HOST: str = os.getenv("SMTP_HOST", "")
@@ -38,6 +40,19 @@ class Settings:
     SMTP_USER: str = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     SMTP_REMITENTE: str = os.getenv("SMTP_REMITENTE", "")
+
+    # Correo por API con Brevo (recomendado en Render, que bloquea SMTP en el plan gratis).
+    # Si BREVO_API_KEY tiene valor, se usa Brevo en lugar de SMTP.
+    BREVO_API_KEY: str = os.getenv("BREVO_API_KEY", "")
+    CORREO_REMITENTE: str = os.getenv("CORREO_REMITENTE", os.getenv("SMTP_REMITENTE", ""))
+    CORREO_REMITENTE_NOMBRE: str = os.getenv("CORREO_REMITENTE_NOMBRE", "Conecta Escolar")
+
+    # Inteligencia artificial (Google Gemini). Sin llave, las funciones de IA quedan desactivadas.
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
+    # Tablero publicado: llave del enlace público (iframe). Si está vacía se deriva de JWT_SECRET.
+    TABLERO_TOKEN: str = os.getenv("TABLERO_TOKEN", "")
 
 
 settings = Settings()
